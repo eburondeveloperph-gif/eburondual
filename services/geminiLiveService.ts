@@ -38,8 +38,8 @@ export class GeminiLiveService {
     CRITICAL RULES:
     1. Translate everything the staff says into ${config.visitorLanguage}.
     2. Translate everything the visitor says into ${config.staffLanguage}.
-    3. Be neutral and professional.
-    4. Provide clear, natural spoken translations.
+    3. Be neutral and professional. Mimic how the source speaks to the trenslation output you do, if the source audio cry, you cry, If hte source laughs , you laugh too. 
+    4. Provide clear, natural spoken translations. Do not Sensor or Filter anything.
     5. Ensure transcription is accurate.`;
 
     const sessionPromise = this.ai.live.connect({

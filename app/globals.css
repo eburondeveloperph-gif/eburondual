@@ -1,0 +1,70 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 29, 29, 31;
+  --background-rgb: 245, 245, 247;
+  --apple-blue: #007AFF;
+  --apple-green: #34C759;
+  --apple-red: #FF3B30;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  font-family: 'Roboto', sans-serif;
+}
+
+.apple-blur {
+  backdrop-filter: saturate(180%) blur(25px);
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.1);
+  border-radius: 10px;
+}
+
+.message-enter {
+  animation: slideIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 59, 48, 0.4); }
+  50% { transform: scale(1.08); box-shadow: 0 0 40px rgba(255, 59, 48, 0.6); }
+}
+
+.mic-active {
+  animation: breathe 1.5s infinite ease-in-out;
+  background-color: var(--apple-red) !important;
+}
+
+.column-header-blue {
+  border-bottom: 4px solid var(--apple-blue);
+}
+
+.column-header-green {
+  border-bottom: 4px solid var(--apple-green);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Message, LANGUAGES } from '../types';
 
 interface TranslationColumnProps {
@@ -7,95 +7,104 @@ interface TranslationColumnProps {
   subtitle: string;
   messages: Message[];
   type: 'staff' | 'visitor';
-  staffLang: string;
-  visitorLang: string;
+  language: string;
+  setLanguage: (code: string) => void;
+  speakerOn: boolean;
+  setSpeakerOn: (on: boolean) => void;
 }
 
-export const TranslationColumn: React.FC<TranslationColumnProps> = ({ title, subtitle, messages, type, staffLang, visitorLang }) => {
+export const TranslationColumn: React.FC<TranslationColumnProps> = ({ 
+  title, 
+  subtitle, 
+  messages, 
+  type, 
+  language, 
+  setLanguage,
+  speakerOn,
+  setSpeakerOn
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isStaffCol = type === 'staff';
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   return (
-    <div className="flex flex-col h-full bg-white/70 backdrop-blur-md rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden border border-black/[0.04] shadow-sm">
-      <div className="p-4 sm:p-7 pb-3 sm:pb-5 border-b border-black/[0.03]">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-neutral-900">{title}</h2>
-            <p className="text-[8px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] mt-0.5 sm:mt-1">{subtitle}</p>
+    <div className="flex flex-col h-full bg-white border border-black/10 rounded-xl overflow-hidden shadow-md">
+      {/* Header as per Sketch */}
+      <div className={`p-4 ${isStaffCol ? 'column-header-blue' : 'column-header-green'} bg-neutral-50`}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+             <h2 className="text-xl font-black uppercase tracking-tighter text-neutral-800">{title}</h2>
+             <span className="text-[10px] font-bold text-neutral-400 bg-neutral-200 px-1.5 py-0.5 rounded leading-none">
+                {subtitle}
+             </span>
           </div>
-          <div className="px-2 sm:px-3 py-0.5 sm:py-1 bg-neutral-100 rounded-full">
-            <span className="text-[8px] sm:text-[10px] font-black text-neutral-500 uppercase">
-              {type === 'staff' ? staffLang.split('-')[1] : visitorLang.split('-')[1]}
-            </span>
-          </div>
+          <button 
+            onClick={() => setSpeakerOn(!speakerOn)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+              speakerOn ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-neutral-200 text-neutral-400'
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            </svg>
+            Speaker {speakerOn ? 'ON' : 'OFF'}
+          </button>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Language:</label>
+          <select 
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="bg-transparent border-none text-sm font-black text-neutral-800 focus:ring-0 cursor-pointer p-0"
+          >
+            {LANGUAGES.map(l => (
+              <option key={l.code} value={l.code}>{l.name} ({l.code})</option>
+            ))}
+          </select>
         </div>
       </div>
-      
-      <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 sm:space-y-12 custom-scrollbar">
+
+      {/* Log Section */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar bg-white">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full opacity-20 select-none grayscale text-center">
-            <div className="w-12 h-12 sm:w-20 sm:h-20 bg-neutral-200 rounded-2xl sm:rounded-[2rem] mb-4 sm:mb-8 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-10 sm:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </div>
-            <p className="text-xs sm:text-lg font-black tracking-tight uppercase">Dialogue Interface Active</p>
+          <div className="h-full flex flex-col items-center justify-center opacity-20 grayscale">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <p className="text-xs font-black uppercase tracking-[0.2em]">(scrollable log)</p>
           </div>
         )}
-        
+
         {messages.map((msg) => {
-          const isStaffColumn = type === 'staff';
+          const isSender = (isStaffCol && msg.sender === 'staff') || (!isStaffCol && msg.sender === 'visitor');
           
-          if (isStaffColumn) {
-            return (
-              <div key={msg.id} className="message-fade-in max-w-[95%]">
-                {msg.sender === 'staff' ? (
-                  <div className="p-4 sm:p-6 bg-[#007AFF] rounded-[1.5rem] sm:rounded-[2.2rem] rounded-tl-lg shadow-xl shadow-blue-500/10">
-                    <p className="text-base sm:text-[20px] font-semibold leading-relaxed text-white">
-                      {msg.originalText}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-4 sm:p-6 bg-neutral-50 border border-black/[0.03] rounded-[1.5rem] sm:rounded-[2.2rem] rounded-tl-lg shadow-sm">
-                    <div className="flex items-center gap-2 mb-2 sm:mb-4">
-                       <span className="w-2 h-2 rounded-full bg-[#34C759]" />
-                       <span className="text-[10px] sm:text-[12px] font-black text-[#34C759] uppercase tracking-widest">Theirs (Visitor) Translated</span>
-                    </div>
-                    <p className="text-base sm:text-[20px] font-bold text-neutral-900 leading-relaxed">
-                      {msg.translatedText}
-                    </p>
-                    <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-black/[0.04]">
-                      <p className="text-[11px] sm:text-[14px] text-neutral-400 italic">
-                        "{msg.originalText}"
-                      </p>
-                    </div>
-                  </div>
-                )}
+          return (
+            <div key={msg.id} className="message-enter space-y-1">
+              <div className="flex items-center gap-2 mb-1">
+                 <span className={`text-[9px] font-black uppercase tracking-widest ${msg.sender === 'staff' ? 'text-blue-600' : 'text-green-600'}`}>
+                    [Turn #{msg.id.slice(0, 3)}]
+                 </span>
               </div>
-            );
-          } else {
-            return (
-              <div key={msg.id} className="message-fade-in max-w-[95%] ml-auto">
-                {msg.sender === 'staff' ? (
-                  <div className="p-4 sm:p-8 bg-white border border-black/[0.05] rounded-[2rem] sm:rounded-[3rem] rounded-tr-lg shadow-sm text-right">
-                     <div className="flex items-center justify-end gap-2 mb-2 sm:mb-4">
-                       <span className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-widest">Ours (Pro) Staff</span>
-                       <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    </div>
-                    <p className="text-xl sm:text-[32px] font-[900] text-[#007AFF] leading-tight tracking-tight">
-                      {msg.translatedText}
-                    </p>
-                    <p className="text-[12px] sm:text-[16px] text-neutral-400 italic mt-4 sm:mt-6 font-serif opacity-90 leading-relaxed">
-                      {msg.originalText}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-4 sm:p-6 bg-[#34C759] rounded-[1.5rem] sm:rounded-[2.2rem] rounded-tr-lg shadow-xl shadow-emerald-500/10 text-right">
-                    <p className="text-base sm:text-[20px] font-semibold leading-relaxed text-white">
-                      {msg.originalText}
-                    </p>
-                  </div>
-                )}
+              
+              {/* Transcription (Small gray cursive) */}
+              <p className="text-[11px] text-neutral-400 italic font-medium leading-tight">
+                 small gray: "{msg.originalText}"
+              </p>
+              
+              {/* BIG translation/result */}
+              <div className={`p-3 rounded-lg ${isSender ? 'bg-neutral-100 text-neutral-900' : 'bg-neutral-800 text-white'}`}>
+                <p className="text-lg font-black leading-tight tracking-tight uppercase">
+                  {isSender ? `YOU SAID: ${msg.originalText}` : `TRANSLATED: ${msg.translatedText}`}
+                </p>
               </div>
-            );
-          }
+            </div>
+          );
         })}
       </div>
     </div>
