@@ -9,15 +9,14 @@ interface LanguageSelectorProps {
 }
 
 export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ label, value, onChange }) => {
-  const currentLang = LANGUAGES.find(l => l.code === value);
   const countryCode = value.split('-')[1] || 'UN';
 
   return (
-    <div className="flex flex-col gap-1 w-full md:min-w-[130px]">
-      <label className="text-[8px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.15em] font-extrabold text-neutral-400 px-0.5 truncate">{label}</label>
+    <div className="flex flex-col gap-1 w-full md:min-w-[140px]">
+      <label className="text-[8px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.15em] font-black text-neutral-400 px-0.5 truncate">{label}</label>
       <div className="relative group">
         <div className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 sm:gap-2 pointer-events-none">
-          <span className="text-[8px] sm:text-[10px] font-black bg-neutral-200 text-neutral-500 px-1 sm:px-1.5 py-0.5 rounded-md leading-none">{countryCode}</span>
+          <span className="text-[8px] sm:text-[10px] font-black bg-neutral-200 text-neutral-600 px-1 sm:px-1.5 py-0.5 rounded-md leading-none">{countryCode}</span>
         </div>
         <select
           value={value}

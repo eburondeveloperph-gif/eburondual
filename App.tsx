@@ -10,8 +10,8 @@ const App: React.FC = () => {
   const [loginCode, setLoginCode] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const [staffLang, setStaffLang] = useState('en-US');
-  const [visitorLang, setVisitorLang] = useState('fr-FR');
+  const [staffLang, setStaffLang] = useState('nl-BE'); // Default to Flemish
+  const [visitorLang, setVisitorLang] = useState('en-US');
   const [isListening, setIsListening] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentInput, setCurrentInput] = useState('');
@@ -39,8 +39,8 @@ const App: React.FC = () => {
       setIsListening(false);
     } else {
       if (!liveService.current) liveService.current = new GeminiLiveService();
-      const sLang = LANGUAGES.find(l => l.code === staffLang)?.name || 'English';
-      const vLang = LANGUAGES.find(l => l.code === visitorLang)?.name || 'French';
+      const sLang = LANGUAGES.find(l => l.code === staffLang)?.name || 'Flemish';
+      const vLang = LANGUAGES.find(l => l.code === visitorLang)?.name || 'English';
       try {
         await liveService.current.connect({
           staffLanguage: sLang,
@@ -134,23 +134,15 @@ const App: React.FC = () => {
             <h1 className="text-lg sm:text-xl font-[900] tracking-tighter text-neutral-900 leading-none">Eburon Dual</h1>
             <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] mt-1 sm:mt-2 block">{loginCode}</span>
           </div>
-          <div className="ml-auto flex md:hidden gap-2">
-            <button onClick={() => {}} className="p-2 bg-white rounded-lg border border-black/10"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
-          </div>
         </div>
 
         <div className="flex gap-4 sm:gap-10 items-center bg-white/40 p-2 sm:p-2.5 px-3 sm:px-4 rounded-[1.5rem] sm:rounded-[2rem] border border-black/[0.04] w-full md:w-auto">
-          <LanguageSelector label="Ours (Staff)" value={staffLang} onChange={setStaffLang} />
+          <LanguageSelector label="Ours (Pro)" value={staffLang} onChange={setStaffLang} />
           <div className="h-8 sm:h-10 w-[1px] bg-black/[0.06]" />
           <LanguageSelector label="Theirs (Visitor)" value={visitorLang} onChange={setVisitorLang} />
         </div>
 
         <div className="hidden md:flex gap-4">
-          <button onClick={() => {}} className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl sm:rounded-2xl bg-white hover:bg-neutral-50 text-neutral-800 transition-all border border-black/[0.05] shadow-sm active:scale-95">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          </button>
           <button onClick={() => window.print()} className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl sm:rounded-2xl bg-white hover:bg-neutral-50 text-neutral-800 transition-all border border-black/[0.05] shadow-sm active:scale-95">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -161,10 +153,10 @@ const App: React.FC = () => {
 
       <main className="flex-1 flex flex-col lg:flex-row gap-4 sm:gap-10 p-4 sm:p-10 overflow-hidden relative">
         <div className="flex-1 h-1/2 lg:h-full">
-          <TranslationColumn title="Ours" subtitle="Dialogue Control" messages={messages} type="staff" staffLang={staffLang} visitorLang={visitorLang} />
+          <TranslationColumn title="Ours" subtitle="Professional Dialogue" messages={messages} type="staff" staffLang={staffLang} visitorLang={visitorLang} />
         </div>
         <div className="flex-1 h-1/2 lg:h-full">
-          <TranslationColumn title="Theirs" subtitle="Communication View" messages={messages} type="visitor" staffLang={staffLang} visitorLang={visitorLang} />
+          <TranslationColumn title="Theirs" subtitle="Visitor Assistance" messages={messages} type="visitor" staffLang={staffLang} visitorLang={visitorLang} />
         </div>
 
         {/* Apple Dynamic Island Style Indicator */}
@@ -222,7 +214,7 @@ const App: React.FC = () => {
         
         <div className="absolute right-6 sm:right-12 bottom-6 sm:bottom-12 text-right opacity-30 select-none hidden sm:block">
            <p className="text-[10px] sm:text-[12px] font-black text-neutral-900 tracking-tighter uppercase">Eburon Live Engine</p>
-           <p className="text-[8px] sm:text-[10px] text-neutral-600 tracking-widest font-bold uppercase">Native Dual Translation</p>
+           <p className="text-[8px] sm:text-[10px] text-neutral-600 tracking-widest font-bold uppercase">Dual Language Tablet Mode</p>
         </div>
       </footer>
     </div>
