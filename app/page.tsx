@@ -191,22 +191,18 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen bg-neutral-100 overflow-hidden select-none relative">
-      {/* Updated Header Layout */}
       <header className="px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 bg-white border-b border-black/10 no-print z-40 relative">
         <div className="flex items-center gap-6 w-full md:w-auto">
           <div className="flex items-center gap-2">
             <span className="text-blue-600 font-black tracking-tighter text-2xl">SUCCES DUAL</span>
             <span className="text-[10px] font-black text-blue-400/50 uppercase tracking-widest hidden sm:inline-block">(online ●)</span>
           </div>
-          
-          {/* STAFF selector remains left-aligned near brand */}
           <div className="hidden md:block">
             <LanguageSelector label="Ours (Pro)" value={staffLang} onChange={setStaffLang} color="blue" />
           </div>
         </div>
         
         <div className="flex items-center gap-4 w-full md:w-auto justify-end">
-          {/* MOVE THEIRS (Visitor) TO THE RIGHT */}
            <div className="hidden md:block">
             <LanguageSelector label="Theirs (Visitor)" value={visitorLang} onChange={setVisitorLang} color="green" />
           </div>
@@ -217,7 +213,6 @@ export default function Home() {
           </div>
 
           <div className="hidden md:flex items-center gap-2 border-l border-black/10 pl-4">
-             {/* PRINTER ICON MOST RIGHT */}
              <button
               onClick={() => window.print()}
               className="group flex items-center gap-2 text-neutral-400 hover:text-neutral-800 transition-colors px-3 py-2 rounded-xl hover:bg-neutral-100"
@@ -226,7 +221,6 @@ export default function Home() {
               <Printer className="w-5 h-5" strokeWidth={2.5} />
             </button>
 
-            {/* History Link */}
             <button 
               onClick={() => setShowHistory(true)}
               className="group flex items-center gap-2 text-neutral-400 hover:text-blue-600 transition-colors px-3 py-2 rounded-xl hover:bg-blue-50"
@@ -238,8 +232,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Responsive Main Layout: Desktop/Landscape = Side-by-side, Mobile/Portrait = Stacked */}
-      {/* lg breakpoint (1024px) is usually the divider for Tablet Landscape vs Tablet Portrait */}
       <main className="flex-1 flex flex-col lg:flex-row gap-4 p-4 overflow-hidden relative z-0">
         <div className="flex-1 h-1/2 lg:h-full">
           <TranslationColumn 
@@ -266,7 +258,6 @@ export default function Home() {
           />
         </div>
 
-        {/* Floating Bubble for Real-time Dialogue */}
         {(currentInput || currentOutput) && isListening && (
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-full max-w-lg px-6 no-print message-enter">
               <div className="bg-[#1D1D1F] text-white p-6 rounded-[2.5rem] shadow-2xl border border-white/10 ring-8 ring-black/5">
@@ -287,81 +278,6 @@ export default function Home() {
         )}
       </main>
 
-      {/* History Modal Overlay */}
-      {showHistory && (
-        <div className="absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex justify-end transition-opacity duration-300">
-          <div className="w-full max-w-md h-full bg-white shadow-2xl flex flex-col transform transition-transform duration-300 slide-in-from-right">
-            <div className="p-5 border-b border-black/5 flex items-center justify-between bg-neutral-50/80 backdrop-blur">
-              <h2 className="text-xl font-black tracking-tight text-neutral-800 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-blue-600" />
-                SESSION HISTORY
-              </h2>
-              <button 
-                onClick={() => setShowHistory(false)}
-                className="p-2 hover:bg-black/5 rounded-full text-neutral-500 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-neutral-50">
-              {history.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-neutral-400">
-                  <Clock className="w-12 h-12 mb-2 opacity-20" />
-                  <p className="text-xs font-black uppercase tracking-widest">No Saved Logs</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {history.map((session) => (
-                    <div key={session.id} className="bg-white rounded-2xl shadow-sm border border-black/5 overflow-hidden">
-                      <div 
-                        onClick={() => setExpandedSessionId(expandedSessionId === session.id ? null : session.id)}
-                        className="p-4 cursor-pointer hover:bg-blue-50/50 transition-colors flex items-center justify-between"
-                      >
-                        <div>
-                          <p className="text-xs font-black text-blue-600 uppercase tracking-widest mb-1">
-                            {new Date(session.timestamp).toLocaleDateString()} • {new Date(session.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                          </p>
-                          <p className="text-sm font-medium text-neutral-600 line-clamp-1 italic">"{session.preview}"</p>
-                        </div>
-                        {expandedSessionId === session.id ? <ChevronUp className="w-5 h-5 text-neutral-400" /> : <ChevronDown className="w-5 h-5 text-neutral-400" />}
-                      </div>
-                      
-                      {expandedSessionId === session.id && (
-                        <div className="border-t border-black/5 bg-neutral-50/50 p-4 max-h-64 overflow-y-auto custom-scrollbar space-y-3">
-                           {session.messages.map((m, idx) => (
-                             <div key={idx} className={`text-sm ${m.sender === 'staff' ? 'text-right' : 'text-left'}`}>
-                               <span className={`text-[9px] font-black uppercase tracking-widest ${m.sender === 'staff' ? 'text-blue-500' : 'text-green-500'} block mb-0.5`}>
-                                 {m.sender === 'staff' ? 'You' : 'Visitor'}
-                               </span>
-                               <div className={`inline-block p-2 rounded-lg ${m.sender === 'staff' ? 'bg-blue-100 text-blue-900 rounded-tr-none' : 'bg-green-100 text-green-900 rounded-tl-none'}`}>
-                                 <p className="font-medium leading-snug">{m.originalText}</p>
-                                 <p className="text-xs opacity-60 mt-1 border-t border-black/5 pt-1">{m.translatedText}</p>
-                               </div>
-                             </div>
-                           ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="p-4 border-t border-black/5 bg-white">
-               <button 
-                onClick={clearHistory}
-                className="w-full flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 py-3 rounded-xl transition-colors text-xs font-black uppercase tracking-widest"
-               >
-                 <Trash2 className="w-4 h-4" />
-                 Clear All Logs
-               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Footer */}
       <footer className="px-6 py-6 sm:py-10 bg-white border-t border-black/10 flex flex-col sm:flex-row items-center justify-between gap-6 no-print z-10 relative">
         <div className="flex items-center gap-4 w-full sm:w-auto">
           <button 
