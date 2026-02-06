@@ -2,12 +2,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { History, Clock, X, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { AppState, Message, LANGUAGES, SavedSession } from '../types';
 import { GeminiLiveService } from '../services/geminiLiveService';
 import { TranslationColumn } from '../components/TranslationColumn';
 
 export default function Home() {
+  const router = useRouter();
   const [appState, setAppState] = useState<AppState>(AppState.LOGIN);
   const [loginCode, setLoginCode] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export default function Home() {
 
   // Load history from local storage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('eburon_history');
+    const saved = localStorage.getItem('succes_history');
     if (saved) {
       try {
         setHistory(JSON.parse(saved));
@@ -44,11 +46,36 @@ export default function Home() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const clean = loginCode.trim().toUpperCase();
-    if (/^(SI[A-Z]{2}\d{6}|AR\d{6}|EBURON2025|DEBUG)$/.test(clean)) {
+
+    // 1. Admin Command Check
+    if (clean === '//ADMIN') {
+      router.push('/admin');
+      return;
+    }
+
+    // 2. Load generated stock codes
+    let validStockCodes: string[] = [];
+    try {
+      const stored = localStorage.getItem('succes_access_codes');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        validStockCodes = parsed.map((item: any) => item.code);
+      }
+    } catch (e) {
+      console.error('Error reading stock codes', e);
+    }
+
+    // 3. Validation Logic
+    // Allow: Master Key (SUCCES2025), Generated Stock Codes, or Legacy/Debug formats
+    const isMaster = clean === 'SUCCES2025';
+    const isStockCode = validStockCodes.includes(clean);
+    const isLegacy = /^(SI[A-Z]{2}\d{6}|AR\d{6}|DEBUG)$/.test(clean);
+
+    if (isMaster || isStockCode || isLegacy) {
       setAppState(AppState.TRANSLATOR);
       setError(null);
     } else {
-      setError('Invalid professional code. Use EBURON2025');
+      setError('Invalid Access Code. Please check your stock entry.');
     }
   };
 
@@ -67,14 +94,14 @@ export default function Home() {
 
     const updatedHistory = [newSession, ...history];
     setHistory(updatedHistory);
-    localStorage.setItem('eburon_history', JSON.stringify(updatedHistory));
+    localStorage.setItem('succes_history', JSON.stringify(updatedHistory));
     alert('Current session saved to History.');
   };
 
   const clearHistory = () => {
     if (confirm('Are you sure you want to clear all history?')) {
       setHistory([]);
-      localStorage.removeItem('eburon_history');
+      localStorage.removeItem('succes_history');
     }
   };
 
@@ -135,7 +162,7 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
               </svg>
             </div>
-            <h1 className="text-4xl font-black tracking-tighter text-neutral-900">Eburon Dual</h1>
+            <h1 className="text-4xl font-black tracking-tighter text-neutral-900">Succes Dual</h1>
             <p className="text-neutral-500 font-bold uppercase tracking-widest text-[10px] mt-2">Professional Dialogue Engine</p>
           </div>
           <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-black/5">
@@ -145,10 +172,10 @@ export default function Home() {
                 <input
                   type="text"
                   value={loginCode}
-                  onChange={(e) => setLoginCode(e.target.value.toUpperCase())}
-                  placeholder="EBURON2025"
-                  className="w-full px-6 py-5 rounded-3xl bg-neutral-50 border-none focus:ring-4 focus:ring-blue-500/10 outline-none text-center font-black text-2xl tracking-tighter placeholder:text-neutral-200"
-                  maxLength={10}
+                  onChange={(e) => setLoginCode(e.target.value)}
+                  placeholder="SUCCES2025"
+                  className="w-full px-6 py-5 rounded-3xl bg-neutral-50 border-none focus:ring-4 focus:ring-blue-500/10 outline-none text-center font-black text-2xl tracking-tighter placeholder:text-neutral-200 uppercase"
+                  maxLength={20}
                   autoFocus
                 />
               </div>
@@ -157,6 +184,9 @@ export default function Home() {
                 Authorize
               </button>
             </form>
+            <p className="mt-8 text-center text-[9px] text-neutral-300 font-black uppercase tracking-[0.2em]">
+                Enter //ADMIN for Stock Generation
+            </p>
           </div>
         </div>
       </div>
@@ -168,7 +198,7 @@ export default function Home() {
       {/* Sketch Header */}
       <header className="px-6 py-4 flex items-center justify-between bg-white border-b border-black/10 no-print z-40 relative">
         <div className="flex items-center gap-2">
-          <span className="text-blue-600 font-black tracking-tighter text-2xl">EBURON DUAL</span>
+          <span className="text-blue-600 font-black tracking-tighter text-2xl">SUCCES DUAL</span>
           <span className="text-[10px] font-black text-blue-400/50 uppercase tracking-widest hidden sm:inline-block">(online ●)</span>
         </div>
         

@@ -1,5 +1,5 @@
 {
-  "name": "Eburon Dual Language Translator",
+  "name": "Succes Dual Translator",
   "description": "A high-quality, low-latency one-to-one translation tool designed for professional reception desks and medical environments.",
   "requestFramePermissions": [
     "microphone"

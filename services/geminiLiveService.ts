@@ -32,7 +32,7 @@ export class GeminiLiveService {
     
     this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    const systemInstruction = `You are a professional dual-language translator for Eburon. 
+    const systemInstruction = `You are a professional dual-language translator for Succes Dual. 
     You are facilitating a conversation between a STAFF member speaking ${config.staffLanguage} and a VISITOR speaking ${config.visitorLanguage}.
     
     CRITICAL RULES:

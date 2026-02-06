@@ -1,3 +1,4 @@
+
 import React from "react";
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
@@ -10,7 +11,7 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "Eburon Dual Translator",
+  title: "Succes Dual Translator",
   description: "A professional one-to-one real-time translation tool.",
 };
 
