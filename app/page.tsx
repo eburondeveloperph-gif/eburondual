@@ -3,10 +3,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { History, Clock, X, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { History, Clock, X, ChevronDown, ChevronUp, Trash2, Printer } from 'lucide-react';
 import { AppState, Message, LANGUAGES, SavedSession } from '../types';
 import { GeminiLiveService } from '../services/geminiLiveService';
 import { TranslationColumn } from '../components/TranslationColumn';
+import { LanguageSelector } from '../components/LanguageSelector';
 
 export default function Home() {
   const router = useRouter();
@@ -31,7 +32,6 @@ export default function Home() {
 
   const liveService = useRef<GeminiLiveService | null>(null);
 
-  // Load history from local storage on mount
   useEffect(() => {
     const saved = localStorage.getItem('succes_history');
     if (saved) {
@@ -47,13 +47,11 @@ export default function Home() {
     e.preventDefault();
     const clean = loginCode.trim().toUpperCase();
 
-    // 1. Admin Command Check
     if (clean === '//ADMIN') {
       router.push('/admin');
       return;
     }
 
-    // 2. Load generated stock codes
     let validStockCodes: string[] = [];
     try {
       const stored = localStorage.getItem('succes_access_codes');
@@ -65,8 +63,6 @@ export default function Home() {
       console.error('Error reading stock codes', e);
     }
 
-    // 3. Validation Logic
-    // Allow: Master Key (SUCCES2025), Generated Stock Codes, or Legacy/Debug formats
     const isMaster = clean === 'SUCCES2025';
     const isStockCode = validStockCodes.includes(clean);
     const isLegacy = /^(SI[A-Z]{2}\d{6}|AR\d{6}|DEBUG)$/.test(clean);
@@ -195,29 +191,60 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen bg-neutral-100 overflow-hidden select-none relative">
-      {/* Sketch Header */}
-      <header className="px-6 py-4 flex items-center justify-between bg-white border-b border-black/10 no-print z-40 relative">
-        <div className="flex items-center gap-2">
-          <span className="text-blue-600 font-black tracking-tighter text-2xl">SUCCES DUAL</span>
-          <span className="text-[10px] font-black text-blue-400/50 uppercase tracking-widest hidden sm:inline-block">(online ●)</span>
+      {/* Updated Header Layout */}
+      <header className="px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 bg-white border-b border-black/10 no-print z-40 relative">
+        <div className="flex items-center gap-6 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-600 font-black tracking-tighter text-2xl">SUCCES DUAL</span>
+            <span className="text-[10px] font-black text-blue-400/50 uppercase tracking-widest hidden sm:inline-block">(online ●)</span>
+          </div>
+          
+          {/* STAFF selector remains left-aligned near brand */}
+          <div className="hidden md:block">
+            <LanguageSelector label="Ours (Pro)" value={staffLang} onChange={setStaffLang} color="blue" />
+          </div>
         </div>
         
-        {/* History Link / Settings */}
-        <button 
-          onClick={() => setShowHistory(true)}
-          className="group flex items-center gap-2 text-neutral-400 hover:text-blue-600 transition-colors px-3 py-2 rounded-xl hover:bg-blue-50"
-        >
-          <span className="text-[10px] font-black uppercase tracking-widest group-hover:text-blue-600">History</span>
-          <Clock className="w-5 h-5" strokeWidth={2.5} />
-        </button>
+        <div className="flex items-center gap-4 w-full md:w-auto justify-end">
+          {/* MOVE THEIRS (Visitor) TO THE RIGHT */}
+           <div className="hidden md:block">
+            <LanguageSelector label="Theirs (Visitor)" value={visitorLang} onChange={setVisitorLang} color="green" />
+          </div>
+          
+          <div className="flex md:hidden gap-2 w-full">
+             <LanguageSelector label="Ours" value={staffLang} onChange={setStaffLang} color="blue" />
+             <LanguageSelector label="Theirs" value={visitorLang} onChange={setVisitorLang} color="green" />
+          </div>
+
+          <div className="hidden md:flex items-center gap-2 border-l border-black/10 pl-4">
+             {/* PRINTER ICON MOST RIGHT */}
+             <button
+              onClick={() => window.print()}
+              className="group flex items-center gap-2 text-neutral-400 hover:text-neutral-800 transition-colors px-3 py-2 rounded-xl hover:bg-neutral-100"
+              title="Print Log"
+            >
+              <Printer className="w-5 h-5" strokeWidth={2.5} />
+            </button>
+
+            {/* History Link */}
+            <button 
+              onClick={() => setShowHistory(true)}
+              className="group flex items-center gap-2 text-neutral-400 hover:text-blue-600 transition-colors px-3 py-2 rounded-xl hover:bg-blue-50"
+              title="View History"
+            >
+              <Clock className="w-5 h-5" strokeWidth={2.5} />
+            </button>
+          </div>
+        </div>
       </header>
 
-      {/* Main Dual View - 2 Columns */}
-      <main className="flex-1 flex flex-col md:flex-row gap-4 p-4 overflow-hidden relative z-0">
-        <div className="flex-1 h-1/2 md:h-full">
+      {/* Responsive Main Layout: Desktop/Landscape = Side-by-side, Mobile/Portrait = Stacked */}
+      {/* lg breakpoint (1024px) is usually the divider for Tablet Landscape vs Tablet Portrait */}
+      <main className="flex-1 flex flex-col lg:flex-row gap-4 p-4 overflow-hidden relative z-0">
+        <div className="flex-1 h-1/2 lg:h-full">
           <TranslationColumn 
-            title="YOU (Regular)" 
-            subtitle="PRO"
+            title="Ours" 
+            subtitle="STAFF"
             messages={messages} 
             type="staff" 
             language={staffLang}
@@ -226,10 +253,10 @@ export default function Home() {
             setSpeakerOn={setStaffSpeaker}
           />
         </div>
-        <div className="flex-1 h-1/2 md:h-full">
+        <div className="flex-1 h-1/2 lg:h-full">
           <TranslationColumn 
-            title="VISITOR" 
-            subtitle="CLIENT"
+            title="Theirs" 
+            subtitle="VISITOR"
             messages={messages} 
             type="visitor" 
             language={visitorLang}
@@ -334,7 +361,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Sketch Footer */}
+      {/* Footer */}
       <footer className="px-6 py-6 sm:py-10 bg-white border-t border-black/10 flex flex-col sm:flex-row items-center justify-between gap-6 no-print z-10 relative">
         <div className="flex items-center gap-4 w-full sm:w-auto">
           <button 
@@ -342,12 +369,6 @@ export default function Home() {
             className="flex-1 sm:flex-none bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-black uppercase text-[10px] tracking-widest px-8 py-4 rounded-xl transition-all active:scale-95 border border-black/5"
           >
             [ STORE ]
-          </button>
-          <button 
-            onClick={() => window.print()}
-            className="flex-1 sm:flex-none bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-black uppercase text-[10px] tracking-widest px-8 py-4 rounded-xl transition-all active:scale-95 border border-black/5"
-          >
-            [ PRINT ]
           </button>
         </div>
 

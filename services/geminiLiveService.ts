@@ -5,13 +5,12 @@ import { encode, decode, decodeAudioData, float32ToInt16 } from './audioUtils';
 
 export class GeminiLiveService {
   private ai: GoogleGenAI;
-  private session: any; // Using any for session as types from SDK are evolving
+  private session: any;
   private inputAudioContext: AudioContext | null = null;
   private outputAudioContext: AudioContext | null = null;
   private nextStartTime = 0;
   private sources = new Set<AudioBufferSourceNode>();
   private stream: MediaStream | null = null;
-  private scriptProcessor: ScriptProcessorNode | null = null;
   private isConnected = false;
 
   constructor() {
@@ -32,22 +31,30 @@ export class GeminiLiveService {
     
     this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    const systemInstruction = `You are a professional dual-language translator for Succes Dual. 
-    You are facilitating a conversation between a STAFF member speaking ${config.staffLanguage} and a VISITOR speaking ${config.visitorLanguage}.
+    const systemInstruction = `You are the core translation engine for Succes Dual.
+    YOU MUST USE THE ORUS VOICE AND DATA LIBRARY AND LEXICON FOR EXACT NATIVE FLEMISH TRANSLATION.
     
-    CRITICAL RULES:
-    1. Translate everything the staff says into ${config.visitorLanguage}.
-    2. Translate everything the visitor says into ${config.staffLanguage}.
-    3. Be neutral and professional. Mimic how the source speaks to the trenslation output you do, if the source audio cry, you cry, If hte source laughs , you laugh too. 
-    4. Provide clear, natural spoken translations. Do not Sensor or Filter anything.
-    5. Ensure transcription is accurate.`;
+    ENVIRONMENT: Professional reception/medical desk context.
+    PARTIES: STAFF (speaking ${config.staffLanguage}) and VISITOR (speaking ${config.visitorLanguage}).
+    
+    STRICT FLEMISH PROTOCOL (nl-BE):
+    - Strictly utilize the Orus library and lexicon to ensure exact native Flemish translations.
+    - Prioritize Belgian-Dutch regionalisms, medical terminology from the Orus database, and natural Flemish sentence structures.
+    - Avoid standard Netherlands-Dutch (nl-NL) vocabulary.
+    
+    BEHAVIOR:
+    1. Translate staff to visitor's language.
+    2. Translate visitor to staff's language (native Flemish via Orus).
+    3. Be neutral, empathetic, and highly professional.
+    4. Provide natural, spoken-quality translations.
+    5. Maintain 100% accurate transcription for the conversation log.`;
 
     const sessionPromise = this.ai.live.connect({
       model: APP_CONFIG.MODEL_NAME,
       callbacks: {
         onopen: () => {
           this.isConnected = true;
-          this.startStreaming(sessionPromise);
+          this.startStreaming();
         },
         onmessage: async (message: LiveServerMessage) => {
           this.handleServerMessage(message, config.onTranscription, config.onTurnComplete);
@@ -74,64 +81,52 @@ export class GeminiLiveService {
     this.session = await sessionPromise;
   }
 
-  private startStreaming(sessionPromise: Promise<any>) {
-    if (!this.stream || !this.inputAudioContext) return;
-
+  private startStreaming() {
+    if (!this.inputAudioContext || !this.stream || !this.session) return;
     const source = this.inputAudioContext.createMediaStreamSource(this.stream);
-    this.scriptProcessor = this.inputAudioContext.createScriptProcessor(4096, 1, 1);
-
-    this.scriptProcessor.onaudioprocess = (e) => {
+    const scriptProcessor = this.inputAudioContext.createScriptProcessor(4096, 1, 1);
+    
+    scriptProcessor.onaudioprocess = (e) => {
+      if (!this.isConnected) return;
       const inputData = e.inputBuffer.getChannelData(0);
-      const int16 = float32ToInt16(inputData);
-      const data = encode(new Uint8Array(int16.buffer));
-
-      sessionPromise.then((session) => {
-        session.sendRealtimeInput({
-          media: {
-            data,
-            mimeType: 'audio/pcm;rate=16000'
-          }
-        });
+      const pcm16 = float32ToInt16(inputData);
+      this.session.sendRealtimeInput({
+        media: {
+          data: encode(new Uint8Array(pcm16.buffer)),
+          mimeType: 'audio/pcm;rate=16000'
+        }
       });
     };
 
-    source.connect(this.scriptProcessor);
-    this.scriptProcessor.connect(this.inputAudioContext.destination);
+    source.connect(scriptProcessor);
+    scriptProcessor.connect(this.inputAudioContext.destination);
   }
 
   private async handleServerMessage(
-    message: LiveServerMessage,
+    message: LiveServerMessage, 
     onTranscription: (text: string, isInput: boolean) => void,
-    onTurnComplete: (input: string, output: string) => void
+    onTurnComplete: (inStr: string, outStr: string) => void
   ) {
-    // Audio Output
-    const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
-    if (audioData && this.outputAudioContext) {
-      this.nextStartTime = Math.max(this.nextStartTime, this.outputAudioContext.currentTime);
-      const audioBuffer = await decodeAudioData(
-        decode(audioData),
-        this.outputAudioContext,
-        APP_CONFIG.SAMPLE_RATE_OUTPUT,
-        1
-      );
-      const source = this.outputAudioContext.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(this.outputAudioContext.destination);
+    if (message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data) {
+      const audioData = decode(message.serverContent.modelTurn.parts[0].inlineData.data);
+      const buffer = await decodeAudioData(audioData, this.outputAudioContext!, APP_CONFIG.SAMPLE_RATE_OUTPUT, 1);
+      const source = this.outputAudioContext!.createBufferSource();
+      source.buffer = buffer;
+      source.connect(this.outputAudioContext!.destination);
+      
+      this.nextStartTime = Math.max(this.nextStartTime, this.outputAudioContext!.currentTime);
       source.start(this.nextStartTime);
-      this.nextStartTime += audioBuffer.duration;
+      this.nextStartTime += buffer.duration;
       this.sources.add(source);
       source.onended = () => this.sources.delete(source);
     }
 
-    // Transcription Handling
-    if (message.serverContent?.inputTranscription) {
-      onTranscription(message.serverContent.inputTranscription.text, true);
+    if (message.serverContent?.inputAudioTranscription?.text) {
+      onTranscription(message.serverContent.inputAudioTranscription.text, true);
     }
-    if (message.serverContent?.outputTranscription) {
-      onTranscription(message.serverContent.outputTranscription.text, false);
+    if (message.serverContent?.outputAudioTranscription?.text) {
+      onTranscription(message.serverContent.outputAudioTranscription.text, false);
     }
-
-    // Interruptions
     if (message.serverContent?.interrupted) {
       this.sources.forEach(s => s.stop());
       this.sources.clear();
@@ -140,14 +135,10 @@ export class GeminiLiveService {
   }
 
   disconnect() {
-    if (this.session) {
-      // session.close is usually how you stop it
-      try { this.session.close(); } catch(e) {}
-    }
-    if (this.scriptProcessor) this.scriptProcessor.disconnect();
-    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
-    if (this.inputAudioContext) this.inputAudioContext.close();
-    if (this.outputAudioContext) this.outputAudioContext.close();
     this.isConnected = false;
+    this.session?.close();
+    this.stream?.getTracks().forEach(t => t.stop());
+    this.inputAudioContext?.close();
+    this.outputAudioContext?.close();
   }
 }

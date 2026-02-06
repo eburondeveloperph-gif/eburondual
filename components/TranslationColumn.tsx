@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
-import { Message, LANGUAGES } from '../types';
+import { Message } from '../types';
 
 interface TranslationColumnProps {
   title: string;
@@ -18,8 +18,7 @@ export const TranslationColumn: React.FC<TranslationColumnProps> = ({
   subtitle, 
   messages, 
   type, 
-  language, 
-  setLanguage,
+  language,
   speakerOn,
   setSpeakerOn
 }) => {
@@ -34,7 +33,7 @@ export const TranslationColumn: React.FC<TranslationColumnProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-white border border-black/10 rounded-xl overflow-hidden shadow-md">
-      {/* Header as per Sketch */}
+      {/* Header Section */}
       <div className={`p-4 ${isStaffCol ? 'column-header-blue' : 'column-header-green'} bg-neutral-50`}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
@@ -57,16 +56,7 @@ export const TranslationColumn: React.FC<TranslationColumnProps> = ({
         </div>
         
         <div className="flex items-center gap-2">
-          <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Language:</label>
-          <select 
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="bg-transparent border-none text-sm font-black text-neutral-800 focus:ring-0 cursor-pointer p-0"
-          >
-            {LANGUAGES.map(l => (
-              <option key={l.code} value={l.code}>{l.name} ({l.code})</option>
-            ))}
-          </select>
+          <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Active Language: <span className="text-neutral-600">{language}</span></span>
         </div>
       </div>
 
@@ -77,7 +67,7 @@ export const TranslationColumn: React.FC<TranslationColumnProps> = ({
             <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <p className="text-xs font-black uppercase tracking-[0.2em]">(scrollable log)</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em]">Dialogue Log</p>
           </div>
         )}
 
@@ -86,21 +76,15 @@ export const TranslationColumn: React.FC<TranslationColumnProps> = ({
           
           return (
             <div key={msg.id} className="message-enter space-y-1">
-              <div className="flex items-center gap-2 mb-1">
-                 <span className={`text-[9px] font-black uppercase tracking-widest ${msg.sender === 'staff' ? 'text-blue-600' : 'text-green-600'}`}>
-                    [Turn #{msg.id.slice(0, 3)}]
-                 </span>
-              </div>
-              
-              {/* Transcription (Small gray cursive) */}
+              {/* STT/Transcription */}
               <p className="text-[11px] text-neutral-400 italic font-medium leading-tight">
-                 small gray: "{msg.originalText}"
+                 "{msg.originalText}"
               </p>
               
-              {/* BIG translation/result */}
+              {/* BIG Translation Result */}
               <div className={`p-3 rounded-lg ${isSender ? 'bg-neutral-100 text-neutral-900' : 'bg-neutral-800 text-white'}`}>
                 <p className="text-lg font-black leading-tight tracking-tight uppercase">
-                  {isSender ? `YOU SAID: ${msg.originalText}` : `TRANSLATED: ${msg.translatedText}`}
+                  {isSender ? msg.originalText : msg.translatedText}
                 </p>
               </div>
             </div>

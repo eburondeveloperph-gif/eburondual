@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -177,8 +176,8 @@ export default function App() {
       </header>
 
       {/* Main Dual View - Responsive Columns */}
-      <main className="flex-1 flex flex-col md:flex-row gap-6 sm:gap-10 p-4 sm:p-10 overflow-hidden relative">
-        <div className="flex-1 h-[45%] md:h-full">
+      <main className="flex-1 flex flex-col lg:flex-row gap-6 sm:gap-10 p-4 sm:p-10 overflow-hidden relative">
+        <div className="flex-1 h-[45%] lg:h-full">
           {/* Added missing props: language, setLanguage, speakerOn, setSpeakerOn */}
           <TranslationColumn 
             title="Ours" 
@@ -191,7 +190,7 @@ export default function App() {
             setSpeakerOn={setStaffSpeaker}
           />
         </div>
-        <div className="flex-1 h-[45%] md:h-full">
+        <div className="flex-1 h-[45%] lg:h-full">
           {/* Added missing props: language, setLanguage, speakerOn, setSpeakerOn */}
           <TranslationColumn 
             title="Theirs" 
