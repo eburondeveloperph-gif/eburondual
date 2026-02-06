@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -62,15 +61,17 @@ export default function App() {
       const vLang = LANGUAGES.find(l => l.code === visitorLang)?.name || 'English';
       
       try {
+        // Fix: Added voiceName and corrected signature for onTurnComplete and onError to resolve TypeScript errors
         await liveService.current.connect({
           staffLanguage: sLang,
           visitorLanguage: vLang,
+          voiceName: 'Kore',
           onTranscription: (text, isInput) => {
             if (isInput) setCurrentInput(prev => prev + text);
             else setCurrentOutput(prev => prev + text);
           },
-          onTurnComplete: () => {},
-          onError: () => {
+          onTurnComplete: (input: string, output: string) => {},
+          onError: (e: any) => {
             setError('Connection error.');
             setIsListening(false);
           }

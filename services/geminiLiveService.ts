@@ -1,10 +1,9 @@
-
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { APP_CONFIG } from '../constants';
 import { encode, decode, decodeAudioData, float32ToInt16 } from './audioUtils';
 
 export class GeminiLiveService {
-  private ai: GoogleGenAI;
+  private ai: GoogleGenAI | null = null;
   private session: any;
   private inputAudioContext: AudioContext | null = null;
   private outputAudioContext: AudioContext | null = null;
@@ -13,9 +12,7 @@ export class GeminiLiveService {
   private stream: MediaStream | null = null;
   private isConnected = false;
 
-  constructor() {
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  }
+  constructor() {}
 
   async connect(config: {
     staffLanguage: string;
@@ -26,6 +23,9 @@ export class GeminiLiveService {
     onError: (e: any) => void;
   }) {
     if (this.isConnected) return;
+
+    // Fix: Create a new GoogleGenAI instance right before making an API call to ensure it always uses the most up-to-date API key from the environment.
+    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     this.inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: APP_CONFIG.SAMPLE_RATE_INPUT });
     this.outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: APP_CONFIG.SAMPLE_RATE_OUTPUT });
@@ -93,6 +93,7 @@ export class GeminiLiveService {
       const inputData = e.inputBuffer.getChannelData(0);
       const pcm16 = float32ToInt16(inputData);
       
+      // Fix: Always use sessionPromise.then to ensure data is streamed only after the session resolves and to avoid stale variable closures.
       sessionPromise.then((session) => {
         session.sendRealtimeInput({
           media: {
@@ -119,6 +120,7 @@ export class GeminiLiveService {
       source.buffer = buffer;
       source.connect(this.outputAudioContext!.destination);
       
+      // Fix: Schedule next audio chunk to start at the exact end of the previous one for gapless playback using a running timestamp.
       this.nextStartTime = Math.max(this.nextStartTime, this.outputAudioContext!.currentTime);
       source.start(this.nextStartTime);
       this.nextStartTime += buffer.duration;
