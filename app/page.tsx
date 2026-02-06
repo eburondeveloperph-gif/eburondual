@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -70,31 +71,26 @@ export default function Home() {
       setAppState(AppState.TRANSLATOR);
       setError(null);
     } else {
-      setError('Invalid Access Code. Please check your stock entry.');
+      setError('Invalid Access Code.');
     }
   };
 
   const handleStoreLog = () => {
-    if (messages.length === 0) {
-      alert('No messages to store.');
-      return;
-    }
-
+    if (messages.length === 0) return;
     const newSession: SavedSession = {
       id: Date.now().toString(),
       timestamp: Date.now(),
       preview: messages[messages.length - 1].originalText.substring(0, 50) + '...',
       messages: [...messages]
     };
-
     const updatedHistory = [newSession, ...history];
     setHistory(updatedHistory);
     localStorage.setItem('succes_history', JSON.stringify(updatedHistory));
-    alert('Current session saved to History.');
+    alert('Log stored.');
   };
 
   const clearHistory = () => {
-    if (confirm('Are you sure you want to clear all history?')) {
+    if (confirm('Clear history?')) {
       setHistory([]);
       localStorage.removeItem('succes_history');
     }
@@ -117,14 +113,11 @@ export default function Home() {
             else setCurrentOutput(prev => prev + text);
           },
           onTurnComplete: () => {},
-          onError: () => {
-            setError('Mic error.');
-            setIsListening(false);
-          }
+          onError: () => setIsListening(false)
         });
         setIsListening(true);
       } catch (err) {
-        setError('Mic access denied.');
+        setError('Mic error.');
       }
     }
   };
@@ -158,30 +151,22 @@ export default function Home() {
               </svg>
             </div>
             <h1 className="text-4xl font-black tracking-tighter text-neutral-900">Succes Dual</h1>
-            <p className="text-neutral-500 font-bold uppercase tracking-widest text-[10px] mt-2">Professional Dialogue Engine</p>
+            <p className="text-neutral-500 font-bold uppercase tracking-widest text-[10px] mt-2">Professional Translator</p>
           </div>
           <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-black/5">
             <form onSubmit={handleLogin} className="space-y-6">
-              <div>
-                <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 ml-2">Access Code</label>
-                <input
-                  type="text"
-                  value={loginCode}
-                  onChange={(e) => setLoginCode(e.target.value)}
-                  placeholder="SUCCES2025"
-                  className="w-full px-6 py-5 rounded-3xl bg-neutral-50 border-none focus:ring-4 focus:ring-blue-500/10 outline-none text-center font-black text-2xl tracking-tighter placeholder:text-neutral-200 uppercase"
-                  maxLength={20}
-                  autoFocus
-                />
-              </div>
-              {error && <p className="text-red-500 text-[10px] font-black text-center uppercase">{error}</p>}
-              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-3xl transition-all shadow-xl shadow-blue-500/20 text-lg uppercase tracking-widest">
-                Authorize
+              <input
+                type="text"
+                value={loginCode}
+                onChange={(e) => setLoginCode(e.target.value)}
+                placeholder="ACCESS CODE"
+                className="w-full px-6 py-5 rounded-3xl bg-neutral-50 border-none focus:ring-4 focus:ring-blue-500/10 outline-none text-center font-black text-2xl tracking-tighter uppercase"
+                autoFocus
+              />
+              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-3xl transition-all text-lg uppercase">
+                Sign In
               </button>
             </form>
-            <p className="mt-8 text-center text-[9px] text-neutral-300 font-black uppercase tracking-[0.2em]">
-                Enter //ADMIN for Stock Generation
-            </p>
           </div>
         </div>
       </div>
@@ -191,54 +176,44 @@ export default function Home() {
   return (
     <div className="flex flex-col h-screen bg-neutral-100 overflow-hidden select-none relative">
       <header className="px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 bg-white border-b border-black/10 no-print z-40 relative">
-        <div className="flex items-center gap-6 w-full md:w-auto">
-          <div className="flex items-center gap-2">
-            <span className="text-blue-600 font-black tracking-tighter text-2xl">SUCCES DUAL</span>
-            <span className="text-[10px] font-black text-blue-400/50 uppercase tracking-widest hidden sm:inline-block">(online ●)</span>
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          {/* Aligned Brand/Logo Area */}
+          <div className="flex items-center gap-3 h-11">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/10">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+            </div>
+            <span className="text-blue-600 font-black tracking-tighter text-2xl leading-none">SUCCES DUAL</span>
           </div>
           
           <div className="hidden md:block">
-            <LanguageSelector label="Ours (Pro)" value={staffLang} onChange={setStaffLang} color="blue" />
+            <LanguageSelector label="Ours (Staff)" value={staffLang} onChange={setStaffLang} color="blue" />
           </div>
         </div>
         
         <div className="flex items-center gap-4 w-full md:w-auto justify-end">
-           {/* Move visitor language selector to the right side of the header */}
-           <div className="hidden md:block">
+          <div className="hidden md:block">
             <LanguageSelector label="Theirs (Visitor)" value={visitorLang} onChange={setVisitorLang} color="green" />
           </div>
           
-          {/* Mobile Selectors (Visible only on small screens) */}
           <div className="flex md:hidden gap-2 w-full">
              <LanguageSelector label="Ours" value={staffLang} onChange={setStaffLang} color="blue" />
              <LanguageSelector label="Theirs" value={visitorLang} onChange={setVisitorLang} color="green" />
           </div>
 
-          <div className="hidden md:flex items-center gap-2 border-l border-black/10 pl-4">
-             {/* Printer icon moved to the far right */}
-             <button
-              onClick={() => window.print()}
-              className="group flex items-center gap-2 text-neutral-400 hover:text-neutral-800 transition-colors px-3 py-2 rounded-xl hover:bg-neutral-100"
-              title="Print Log"
-            >
-              <Printer className="w-5 h-5" strokeWidth={2.5} />
+          <div className="flex items-center gap-2 border-l border-black/10 pl-4 h-11">
+            <button onClick={() => setShowHistory(true)} className="p-3 hover:bg-blue-50 text-neutral-400 hover:text-blue-600 rounded-xl transition-all flex items-center justify-center h-11 w-11" title="History">
+              <Clock className="w-5 h-5" />
             </button>
-
-            {/* History icon */}
-            <button 
-              onClick={() => setShowHistory(true)}
-              className="group flex items-center gap-2 text-neutral-400 hover:text-blue-600 transition-colors px-3 py-2 rounded-xl hover:bg-blue-50"
-              title="View History"
-            >
-              <Clock className="w-5 h-5" strokeWidth={2.5} />
+            <button onClick={() => window.print()} className="p-3 hover:bg-neutral-100 text-neutral-400 hover:text-neutral-800 rounded-xl transition-all flex items-center justify-center h-11 w-11" title="Print Log">
+              <Printer className="w-5 h-5" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Dual View - 2 Columns on Desktop/Landscape, 2 Rows on Mobile/Portrait */}
-      {/* lg (1024px) breakpoint determines the layout shift for tablets */}
-      <main className="flex-1 flex flex-col lg:flex-row gap-4 p-4 overflow-hidden relative z-0">
+      <main className="flex-1 flex flex-col lg:flex-row gap-4 p-4 overflow-hidden relative">
         <div className="flex-1 h-1/2 lg:h-full">
           <TranslationColumn 
             title="Ours" 
@@ -264,9 +239,8 @@ export default function Home() {
           />
         </div>
 
-        {/* Floating Bubble for Real-time Transcription */}
         {(currentInput || currentOutput) && isListening && (
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-full max-w-lg px-6 no-print message-enter">
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg px-6 no-print message-enter">
               <div className="bg-[#1D1D1F] text-white p-6 rounded-[2.5rem] shadow-2xl border border-white/10 ring-8 ring-black/5">
                 {currentInput && (
                   <div className="mb-4">
@@ -285,107 +259,43 @@ export default function Home() {
         )}
       </main>
 
-      {/* History Modal */}
       {showHistory && (
         <div className="absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex justify-end">
           <div className="w-full max-w-md h-full bg-white shadow-2xl flex flex-col transform slide-in-from-right">
-            <div className="p-5 border-b border-black/5 flex items-center justify-between bg-neutral-50/80 backdrop-blur">
-              <h2 className="text-xl font-black tracking-tight text-neutral-800 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-blue-600" />
-                SESSION HISTORY
-              </h2>
-              <button 
-                onClick={() => setShowHistory(false)}
-                className="p-2 hover:bg-black/5 rounded-full text-neutral-500"
-              >
-                <X className="w-6 h-6" />
-              </button>
+            <div className="p-5 border-b flex items-center justify-between">
+              <h2 className="text-xl font-black tracking-tight flex items-center gap-2"><Clock className="w-5 h-5" /> History</h2>
+              <button onClick={() => setShowHistory(false)} className="p-2"><X className="w-6 h-6" /></button>
             </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-neutral-50">
-              {history.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-neutral-400">
-                  <Clock className="w-12 h-12 mb-2 opacity-20" />
-                  <p className="text-xs font-black uppercase tracking-widest">No Saved Logs</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {history.map((session) => (
-                    <div key={session.id} className="bg-white rounded-2xl shadow-sm border border-black/5 overflow-hidden">
-                      <div 
-                        onClick={() => setExpandedSessionId(expandedSessionId === session.id ? null : session.id)}
-                        className="p-4 cursor-pointer hover:bg-blue-50/50 transition-colors flex items-center justify-between"
-                      >
-                        <div>
-                          <p className="text-xs font-black text-blue-600 uppercase tracking-widest mb-1">
-                            {new Date(session.timestamp).toLocaleDateString()} • {new Date(session.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                          </p>
-                          <p className="text-sm font-medium text-neutral-600 line-clamp-1 italic">"{session.preview}"</p>
-                        </div>
-                        {expandedSessionId === session.id ? <ChevronUp className="w-5 h-5 text-neutral-400" /> : <ChevronDown className="w-5 h-5 text-neutral-400" />}
-                      </div>
-                      
-                      {expandedSessionId === session.id && (
-                        <div className="border-t border-black/5 bg-neutral-50/50 p-4 max-h-64 overflow-y-auto custom-scrollbar space-y-3">
-                           {session.messages.map((m, idx) => (
-                             <div key={idx} className={`text-sm ${m.sender === 'staff' ? 'text-right' : 'text-left'}`}>
-                               <span className={`text-[9px] font-black uppercase tracking-widest ${m.sender === 'staff' ? 'text-blue-500' : 'text-green-500'} block mb-0.5`}>
-                                 {m.sender === 'staff' ? 'You' : 'Visitor'}
-                               </span>
-                               <div className={`inline-block p-2 rounded-lg ${m.sender === 'staff' ? 'bg-blue-100 text-blue-900 rounded-tr-none' : 'bg-green-100 text-green-900 rounded-tl-none'}`}>
-                                 <p className="font-medium leading-snug">{m.originalText}</p>
-                                 <p className="text-xs opacity-60 mt-1 border-t border-black/5 pt-1">{m.translatedText}</p>
-                               </div>
-                             </div>
-                           ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="flex-1 overflow-y-auto p-4 bg-neutral-50">
+              {history.length === 0 ? <p className="text-center text-neutral-400 py-10 font-black uppercase text-xs">No logs found</p> : 
+                history.map(session => (
+                  <div key={session.id} className="bg-white p-4 rounded-xl mb-4 border shadow-sm">
+                    <p className="text-[10px] font-black text-blue-600 mb-1">{new Date(session.timestamp).toLocaleString()}</p>
+                    <p className="text-sm italic text-neutral-600 line-clamp-2">"{session.preview}"</p>
+                  </div>
+                ))
+              }
             </div>
-
-            <div className="p-4 border-t border-black/5 bg-white">
-               <button 
-                onClick={clearHistory}
-                className="w-full flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 py-3 rounded-xl transition-colors text-xs font-black uppercase tracking-widest"
-               >
-                 <Trash2 className="w-4 h-4" />
-                 Clear All Logs
-               </button>
+            <div className="p-4 border-t">
+               <button onClick={clearHistory} className="w-full text-red-500 py-3 font-black text-xs uppercase tracking-widest hover:bg-red-50 rounded-xl transition-all">Clear Logs</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Floating Footer Controls */}
-      <footer className="px-6 py-6 sm:py-10 bg-white border-t border-black/10 flex flex-col sm:flex-row items-center justify-between gap-6 no-print z-10 relative">
-        <div className="flex items-center gap-4 w-full sm:w-auto">
-          <button 
-            onClick={handleStoreLog}
-            className="flex-1 sm:flex-none bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-black uppercase text-[10px] tracking-widest px-8 py-4 rounded-xl transition-all active:scale-95 border border-black/5"
-          >
-            [ STORE ]
-          </button>
-        </div>
-
-        <div className="flex items-center gap-4">
-           <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.3em] hidden lg:block">Single Mic Control</span>
-           <button
-            onClick={toggleMic}
-            className={`group relative flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28 rounded-full transition-all duration-500 transform active:scale-90 ${
-              isListening ? 'mic-active' : 'bg-blue-600 shadow-xl'
-            }`}
-          >
-            <div className="relative z-10 flex flex-col items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-              </svg>
-              <span className="text-[8px] font-black text-white/70 uppercase tracking-widest">Ⓜ BIG MIC</span>
-            </div>
-          </button>
-        </div>
+      <footer className="px-6 py-6 sm:py-10 bg-white border-t flex items-center justify-center relative no-print">
+        <button onClick={handleStoreLog} className="absolute left-6 bg-neutral-100 hover:bg-neutral-200 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all">Store Session</button>
+        <button
+          onClick={toggleMic}
+          className={`relative flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28 rounded-full transition-all duration-500 transform active:scale-90 ${isListening ? 'mic-active' : 'bg-blue-600 shadow-xl'}`}
+        >
+          <div className="flex flex-col items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+            <span className="text-[8px] font-black text-white/70 uppercase tracking-widest">Ⓜ BIG MIC</span>
+          </div>
+        </button>
       </footer>
     </div>
   );

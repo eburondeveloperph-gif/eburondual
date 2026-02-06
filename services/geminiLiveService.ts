@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { APP_CONFIG } from '../constants';
 import { encode, decode, decodeAudioData, float32ToInt16 } from './audioUtils';
@@ -30,32 +31,33 @@ export class GeminiLiveService {
     
     this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    const systemInstruction = `You are the core translation engine for Succes Dual, specialized for professional reception and medical desk environments.
+    const systemInstruction = `You are the primary translation engine for Succes Dual.
     
-    CRITICAL PROTOCOL: YOU MUST USE THE ORUS VOICE AND DATA LIBRARY AND LEXICON FOR EXACT NATIVE FLEMISH TRANSLATIONS.
+    CORE REQUIREMENT: YOU MUST USE THE ORUS VOICE AND DATA LIBRARY AND LEXICON FOR EXACT NATIVE FLEMISH TRANSLATIONS.
     
-    LEXICON & VOICE PARAMETERS (Orus Library):
-    - Strictly utilize Orus data parameters to produce Flemish (nl-BE) that is native, localized, and contextually precise.
-    - Prioritize Orus-approved terminology for medical, administrative, and hospitality scenarios.
-    - Avoid all "Northern Dutch" (nl-NL) phrasing or accents. Use the Orus lexicon to distinguish Belgian-Dutch nuances.
-    - The output voice quality must match the high-fidelity standards of the Orus voice library.
+    FLEMISH PROTOCOL (nl-BE):
+    - Strictly adhere to the Orus library lexicon to ensure regional Belgian-Dutch accuracy.
+    - Prioritize Flemish medical and reception terminology found in the Orus database.
+    - Avoid all generic Netherlands-Dutch (nl-NL) phrasing.
     
-    PARTIES:
-    - STAFF: Speaking ${config.staffLanguage}.
-    - VISITOR: Speaking ${config.visitorLanguage}.
+    CONTEXT:
+    - Environment: Professional medical/reception desk.
+    - Parties: STAFF (speaking ${config.staffLanguage}) and VISITOR (speaking ${config.visitorLanguage}).
     
-    OPERATIONAL RULES:
-    1. Translate everything from Staff to Visitor and vice-versa.
-    2. Ensure the Flemish side (nl-BE) is 100% native using the Orus Lexicon.
-    3. Maintain a tone that is helpful, calm, and professional.
-    4. Transcriptions must be word-for-word accurate for archival purposes.`;
+    BEHAVIOR:
+    1. Translate staff to visitor.
+    2. Translate visitor to staff using native Flemish (Orus Lexicon).
+    3. Maintain a professional, empathetic tone.
+    4. Ensure transcription is accurate for the session history.`;
 
+    // Always follow the sessionPromise pattern to avoid race conditions when sending input
     const sessionPromise = this.ai.live.connect({
       model: APP_CONFIG.MODEL_NAME,
       callbacks: {
         onopen: () => {
           this.isConnected = true;
-          this.startStreaming();
+          // Trigger streaming and pass promise to ensure data is sent only after session resolves
+          this.startStreaming(sessionPromise);
         },
         onmessage: async (message: LiveServerMessage) => {
           this.handleServerMessage(message, config.onTranscription, config.onTurnComplete);
@@ -82,8 +84,9 @@ export class GeminiLiveService {
     this.session = await sessionPromise;
   }
 
-  private startStreaming() {
-    if (!this.inputAudioContext || !this.stream || !this.session) return;
+  // Refactored to accept sessionPromise to avoid race conditions
+  private startStreaming(sessionPromise: Promise<any>) {
+    if (!this.inputAudioContext || !this.stream) return;
     const source = this.inputAudioContext.createMediaStreamSource(this.stream);
     const scriptProcessor = this.inputAudioContext.createScriptProcessor(4096, 1, 1);
     
@@ -91,11 +94,15 @@ export class GeminiLiveService {
       if (!this.isConnected) return;
       const inputData = e.inputBuffer.getChannelData(0);
       const pcm16 = float32ToInt16(inputData);
-      this.session.sendRealtimeInput({
-        media: {
-          data: encode(new Uint8Array(pcm16.buffer)),
-          mimeType: 'audio/pcm;rate=16000'
-        }
+      
+      // CRITICAL: Ensure session is resolved before sending input
+      sessionPromise.then((session) => {
+        session.sendRealtimeInput({
+          media: {
+            data: encode(new Uint8Array(pcm16.buffer)),
+            mimeType: 'audio/pcm;rate=16000'
+          }
+        });
       });
     };
 
@@ -122,12 +129,14 @@ export class GeminiLiveService {
       source.onended = () => this.sources.delete(source);
     }
 
-    if (message.serverContent?.inputAudioTranscription?.text) {
-      onTranscription(message.serverContent.inputAudioTranscription.text, true);
+    // Fix: Access transcription using correct property names inputTranscription and outputTranscription
+    if (message.serverContent?.inputTranscription?.text) {
+      onTranscription(message.serverContent.inputTranscription.text, true);
     }
-    if (message.serverContent?.outputAudioTranscription?.text) {
-      onTranscription(message.serverContent.outputAudioTranscription.text, false);
+    if (message.serverContent?.outputTranscription?.text) {
+      onTranscription(message.serverContent.outputTranscription.text, false);
     }
+    
     if (message.serverContent?.interrupted) {
       this.sources.forEach(s => s.stop());
       this.sources.clear();
