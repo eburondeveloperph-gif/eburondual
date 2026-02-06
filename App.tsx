@@ -30,14 +30,28 @@ export default function App() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanCode = loginCode.trim().toUpperCase();
-    const siRegex = /^SI[A-Z]{2}\d{6}$/;
-    const arRegex = /^AR\d{6}$/;
     
-    if (siRegex.test(cleanCode) || arRegex.test(cleanCode) || cleanCode === 'EBURON2025') {
+    // Check local storage for stock codes (same logic as main app)
+    let validStockCodes: string[] = [];
+    try {
+      const stored = localStorage.getItem('succes_access_codes');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        validStockCodes = parsed.map((item: any) => item.code);
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    const siRegex = /^SI[A-Z]{2}\d{6}$/; // Legacy regex
+    const arRegex = /^AR\d{6}$/;
+    const isStock = validStockCodes.includes(cleanCode);
+    
+    if (isStock || siRegex.test(cleanCode) || arRegex.test(cleanCode) || cleanCode === 'SUCCES2025') {
       setAppState(AppState.TRANSLATOR);
       setError(null);
     } else {
-      setError('Invalid Access Code. Use EBURON2025 for tests.');
+      setError('Invalid Access Code. Use SUCCES2025.');
     }
   };
 
@@ -99,7 +113,7 @@ export default function App() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
               </svg>
             </div>
-            <h1 className="text-4xl font-[900] tracking-tighter text-neutral-900 mb-2">Eburon Dual</h1>
+            <h1 className="text-4xl font-[900] tracking-tighter text-neutral-900 mb-2">Succes Dual</h1>
             <p className="text-neutral-400 font-bold uppercase tracking-widest text-xs">Professional Translator Login</p>
           </div>
           
@@ -111,7 +125,7 @@ export default function App() {
                   type="text"
                   value={loginCode}
                   onChange={(e) => setLoginCode(e.target.value)}
-                  placeholder="EBURON2025"
+                  placeholder="SUCCES2025"
                   className="w-full px-6 py-5 rounded-3xl bg-neutral-100 border-none focus:ring-4 focus:ring-blue-500/10 outline-none text-center font-black text-2xl tracking-tighter placeholder:text-neutral-300 uppercase"
                   autoFocus
                 />
@@ -141,7 +155,7 @@ export default function App() {
             </svg>
           </div>
           <div>
-            <h1 className="text-xl font-[900] tracking-tighter leading-none">Eburon Dual</h1>
+            <h1 className="text-xl font-[900] tracking-tighter leading-none">Succes Dual</h1>
             <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mt-1 block">Active: {loginCode}</span>
           </div>
         </div>
@@ -235,7 +249,7 @@ export default function App() {
         </button>
         
         <div className="absolute right-10 bottom-10 text-right opacity-30 select-none hidden lg:block">
-           <p className="text-[14px] font-[900] tracking-tighter uppercase">Eburon Live 2025</p>
+           <p className="text-[14px] font-[900] tracking-tighter uppercase">Succes Live 2025</p>
            <p className="text-[10px] text-neutral-600 tracking-widest font-bold uppercase">Tablet Mode Active</p>
         </div>
       </footer>
