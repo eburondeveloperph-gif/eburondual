@@ -20,6 +20,7 @@ export class GeminiLiveService {
   async connect(config: {
     staffLanguage: string;
     visitorLanguage: string;
+    voiceName: string;
     onTranscription: (text: string, isInput: boolean) => void;
     onTurnComplete: (input: string, output: string) => void;
     onError: (e: any) => void;
@@ -50,13 +51,11 @@ export class GeminiLiveService {
     3. Maintain a professional, empathetic tone.
     4. Ensure transcription is accurate for the session history.`;
 
-    // Always follow the sessionPromise pattern to avoid race conditions when sending input
     const sessionPromise = this.ai.live.connect({
       model: APP_CONFIG.MODEL_NAME,
       callbacks: {
         onopen: () => {
           this.isConnected = true;
-          // Trigger streaming and pass promise to ensure data is sent only after session resolves
           this.startStreaming(sessionPromise);
         },
         onmessage: async (message: LiveServerMessage) => {
@@ -73,7 +72,7 @@ export class GeminiLiveService {
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
-          voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } },
+          voiceConfig: { prebuiltVoiceConfig: { voiceName: config.voiceName } },
         },
         systemInstruction,
         inputAudioTranscription: {},
@@ -84,7 +83,6 @@ export class GeminiLiveService {
     this.session = await sessionPromise;
   }
 
-  // Refactored to accept sessionPromise to avoid race conditions
   private startStreaming(sessionPromise: Promise<any>) {
     if (!this.inputAudioContext || !this.stream) return;
     const source = this.inputAudioContext.createMediaStreamSource(this.stream);
@@ -95,7 +93,6 @@ export class GeminiLiveService {
       const inputData = e.inputBuffer.getChannelData(0);
       const pcm16 = float32ToInt16(inputData);
       
-      // CRITICAL: Ensure session is resolved before sending input
       sessionPromise.then((session) => {
         session.sendRealtimeInput({
           media: {
@@ -129,7 +126,6 @@ export class GeminiLiveService {
       source.onended = () => this.sources.delete(source);
     }
 
-    // Fix: Access transcription using correct property names inputTranscription and outputTranscription
     if (message.serverContent?.inputTranscription?.text) {
       onTranscription(message.serverContent.inputTranscription.text, true);
     }

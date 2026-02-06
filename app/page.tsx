@@ -3,11 +3,19 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { History, Clock, X, ChevronDown, ChevronUp, Trash2, Printer } from 'lucide-react';
+import { History, Clock, X, ChevronDown, ChevronUp, Trash2, Printer, Settings, Volume2 } from 'lucide-react';
 import { AppState, Message, LANGUAGES, SavedSession } from '../types';
 import { GeminiLiveService } from '../services/geminiLiveService';
 import { TranslationColumn } from '../components/TranslationColumn';
 import { LanguageSelector } from '../components/LanguageSelector';
+
+const AVAILABLE_VOICES = [
+  { id: 'Kore', name: 'Kore (Balanced)' },
+  { id: 'Zephyr', name: 'Zephyr (Bright)' },
+  { id: 'Puck', name: 'Puck (Soft)' },
+  { id: 'Charon', name: 'Charon (Deep)' },
+  { id: 'Fenrir', name: 'Fenrir (Strong)' }
+];
 
 export default function Home() {
   const router = useRouter();
@@ -20,14 +28,18 @@ export default function Home() {
   const [staffSpeaker, setStaffSpeaker] = useState(true);
   const [visitorSpeaker, setVisitorSpeaker] = useState(true);
   
+  // Voice Configuration State
+  const [selectedVoice, setSelectedVoice] = useState('Kore');
+
   const [isListening, setIsListening] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentInput, setCurrentInput] = useState('');
   const [currentOutput, setCurrentOutput] = useState('');
 
-  // History State
-  const [history, setHistory] = useState<SavedSession[]>([]);
+  // UI States
   const [showHistory, setShowHistory] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [history, setHistory] = useState<SavedSession[]>([]);
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
 
   const liveService = useRef<GeminiLiveService | null>(null);
@@ -41,6 +53,8 @@ export default function Home() {
         console.error('Failed to load history', e);
       }
     }
+    const savedVoice = localStorage.getItem('succes_voice');
+    if (savedVoice) setSelectedVoice(savedVoice);
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -108,6 +122,7 @@ export default function Home() {
         await liveService.current.connect({
           staffLanguage: sLang,
           visitorLanguage: vLang,
+          voiceName: selectedVoice,
           onTranscription: (text, isInput) => {
             if (isInput) setCurrentInput(prev => prev + text);
             else setCurrentOutput(prev => prev + text);
@@ -177,7 +192,6 @@ export default function Home() {
     <div className="flex flex-col h-screen bg-neutral-100 overflow-hidden select-none relative">
       <header className="px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 bg-white border-b border-black/10 no-print z-40 relative">
         <div className="flex items-center gap-4 w-full md:w-auto">
-          {/* Aligned Brand/Logo Area */}
           <div className="flex items-center gap-3 h-11">
             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/10">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -186,7 +200,6 @@ export default function Home() {
             </div>
             <span className="text-blue-600 font-black tracking-tighter text-2xl leading-none">SUCCES DUAL</span>
           </div>
-          
           <div className="hidden md:block">
             <LanguageSelector label="Ours (Staff)" value={staffLang} onChange={setStaffLang} color="blue" />
           </div>
@@ -208,6 +221,9 @@ export default function Home() {
             </button>
             <button onClick={() => window.print()} className="p-3 hover:bg-neutral-100 text-neutral-400 hover:text-neutral-800 rounded-xl transition-all flex items-center justify-center h-11 w-11" title="Print Log">
               <Printer className="w-5 h-5" />
+            </button>
+            <button onClick={() => setShowSettings(true)} className="p-3 hover:bg-neutral-100 text-neutral-400 hover:text-neutral-900 rounded-xl transition-all flex items-center justify-center h-11 w-11" title="Settings">
+              <Settings className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -259,6 +275,7 @@ export default function Home() {
         )}
       </main>
 
+      {/* History Sidebar */}
       {showHistory && (
         <div className="absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex justify-end">
           <div className="w-full max-w-md h-full bg-white shadow-2xl flex flex-col transform slide-in-from-right">
@@ -278,6 +295,78 @@ export default function Home() {
             </div>
             <div className="p-4 border-t">
                <button onClick={clearHistory} className="w-full text-red-500 py-3 font-black text-xs uppercase tracking-widest hover:bg-red-50 rounded-xl transition-all">Clear Logs</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Sidebar */}
+      {showSettings && (
+        <div className="absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex justify-end">
+          <div className="w-full max-w-md h-full bg-white shadow-2xl flex flex-col transform slide-in-from-right">
+            <div className="p-5 border-b flex items-center justify-between bg-neutral-50/50">
+              <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                <Settings className="w-5 h-5 text-blue-600" /> Settings
+              </h2>
+              <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><X className="w-6 h-6 text-neutral-500" /></button>
+            </div>
+            
+            <div className="flex-1 p-6 space-y-10 overflow-y-auto">
+               <section>
+                 <div className="flex items-center gap-2 mb-6">
+                    <Volume2 className="w-4 h-4 text-blue-500" />
+                    <h3 className="text-xs font-black uppercase tracking-widest text-neutral-400">Voice Configuration</h3>
+                 </div>
+                 
+                 <div className="space-y-6">
+                   <div>
+                     <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2 ml-1">Translation Output Voice</label>
+                     <div className="relative">
+                        <select 
+                          value={selectedVoice}
+                          onChange={(e) => {
+                            setSelectedVoice(e.target.value);
+                            localStorage.setItem('succes_voice', e.target.value);
+                          }}
+                          className="w-full bg-neutral-100 hover:bg-white border border-black/5 text-neutral-900 font-bold py-4 px-5 rounded-2xl appearance-none cursor-pointer transition-all focus:ring-4 focus:ring-blue-500/10 outline-none"
+                        >
+                          {AVAILABLE_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50"><ChevronDown className="w-5 h-5" /></div>
+                     </div>
+                     <p className="mt-3 text-[10px] text-neutral-400 font-medium leading-relaxed italic px-1">
+                       * Change will apply upon the next microphone activation. High-fidelity Orus lexicon parameters are maintained across all voice types.
+                     </p>
+                   </div>
+                 </div>
+               </section>
+
+               <section className="pt-10 border-t border-black/5">
+                 <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4 ml-1">Platform Details</h3>
+                 <div className="bg-neutral-50 rounded-2xl p-5 border border-black/5 space-y-3">
+                   <div className="flex justify-between items-center">
+                     <span className="text-[10px] font-bold text-neutral-500 uppercase">Engine</span>
+                     <span className="text-[10px] font-black text-blue-600">Gemini 2.5 Live</span>
+                   </div>
+                   <div className="flex justify-between items-center">
+                     <span className="text-[10px] font-bold text-neutral-500 uppercase">Lexicon</span>
+                     <span className="text-[10px] font-black text-green-600">Orus Library V4.2</span>
+                   </div>
+                   <div className="flex justify-between items-center">
+                     <span className="text-[10px] font-bold text-neutral-500 uppercase">Mode</span>
+                     <span className="text-[10px] font-black text-neutral-800">Dual Native (nl-BE/Multi)</span>
+                   </div>
+                 </div>
+               </section>
+            </div>
+
+            <div className="p-6 border-t bg-neutral-50/50">
+               <button 
+                onClick={() => setShowSettings(false)}
+                className="w-full bg-neutral-900 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs hover:bg-black transition-all active:scale-[0.98]"
+               >
+                 Done
+               </button>
             </div>
           </div>
         </div>
