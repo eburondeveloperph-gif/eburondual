@@ -16,7 +16,7 @@ body {
   background: rgb(var(--background-rgb));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden;
+  overflow: auto; /* allow scrolling on small devices */
   font-family: 'Roboto', sans-serif;
 }
 
