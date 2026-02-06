@@ -12,6 +12,13 @@ export interface Message {
   timestamp: number;
 }
 
+export interface SavedSession {
+  id: string;
+  timestamp: number;
+  preview: string;
+  messages: Message[];
+}
+
 export interface Language {
   code: string;
   name: string;

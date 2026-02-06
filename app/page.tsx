@@ -2,7 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { AppState, Message, LANGUAGES } from '../types';
+import { History, Clock, X, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { AppState, Message, LANGUAGES, SavedSession } from '../types';
 import { GeminiLiveService } from '../services/geminiLiveService';
 import { TranslationColumn } from '../components/TranslationColumn';
 
@@ -21,7 +22,24 @@ export default function Home() {
   const [currentInput, setCurrentInput] = useState('');
   const [currentOutput, setCurrentOutput] = useState('');
 
+  // History State
+  const [history, setHistory] = useState<SavedSession[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+
   const liveService = useRef<GeminiLiveService | null>(null);
+
+  // Load history from local storage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('eburon_history');
+    if (saved) {
+      try {
+        setHistory(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to load history', e);
+      }
+    }
+  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +49,32 @@ export default function Home() {
       setError(null);
     } else {
       setError('Invalid professional code. Use EBURON2025');
+    }
+  };
+
+  const handleStoreLog = () => {
+    if (messages.length === 0) {
+      alert('No messages to store.');
+      return;
+    }
+
+    const newSession: SavedSession = {
+      id: Date.now().toString(),
+      timestamp: Date.now(),
+      preview: messages[messages.length - 1].originalText.substring(0, 50) + '...',
+      messages: [...messages]
+    };
+
+    const updatedHistory = [newSession, ...history];
+    setHistory(updatedHistory);
+    localStorage.setItem('eburon_history', JSON.stringify(updatedHistory));
+    alert('Current session saved to History.');
+  };
+
+  const clearHistory = () => {
+    if (confirm('Are you sure you want to clear all history?')) {
+      setHistory([]);
+      localStorage.removeItem('eburon_history');
     }
   };
 
@@ -120,20 +164,26 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-neutral-100 overflow-hidden select-none">
+    <div className="flex flex-col h-screen bg-neutral-100 overflow-hidden select-none relative">
       {/* Sketch Header */}
-      <header className="px-6 py-4 flex items-center justify-between bg-white border-b border-black/10 no-print">
+      <header className="px-6 py-4 flex items-center justify-between bg-white border-b border-black/10 no-print z-40 relative">
         <div className="flex items-center gap-2">
           <span className="text-blue-600 font-black tracking-tighter text-2xl">EBURON DUAL</span>
-          <span className="text-[10px] font-black text-blue-400/50 uppercase tracking-widest">(online ●)</span>
+          <span className="text-[10px] font-black text-blue-400/50 uppercase tracking-widest hidden sm:inline-block">(online ●)</span>
         </div>
-        <button className="text-[10px] font-black text-neutral-400 uppercase tracking-widest hover:text-neutral-800 transition-colors">
-          (settings ⋯)
+        
+        {/* History Link / Settings */}
+        <button 
+          onClick={() => setShowHistory(true)}
+          className="group flex items-center gap-2 text-neutral-400 hover:text-blue-600 transition-colors px-3 py-2 rounded-xl hover:bg-blue-50"
+        >
+          <span className="text-[10px] font-black uppercase tracking-widest group-hover:text-blue-600">History</span>
+          <Clock className="w-5 h-5" strokeWidth={2.5} />
         </button>
       </header>
 
       {/* Main Dual View - 2 Columns */}
-      <main className="flex-1 flex flex-col md:flex-row gap-4 p-4 overflow-hidden relative">
+      <main className="flex-1 flex flex-col md:flex-row gap-4 p-4 overflow-hidden relative z-0">
         <div className="flex-1 h-1/2 md:h-full">
           <TranslationColumn 
             title="YOU (Regular)" 
@@ -161,7 +211,7 @@ export default function Home() {
 
         {/* Floating Bubble for Real-time Dialogue */}
         {(currentInput || currentOutput) && isListening && (
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg px-6 no-print message-enter">
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-full max-w-lg px-6 no-print message-enter">
               <div className="bg-[#1D1D1F] text-white p-6 rounded-[2.5rem] shadow-2xl border border-white/10 ring-8 ring-black/5">
                 {currentInput && (
                   <div className="mb-4">
@@ -180,11 +230,85 @@ export default function Home() {
         )}
       </main>
 
+      {/* History Modal Overlay */}
+      {showHistory && (
+        <div className="absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex justify-end transition-opacity duration-300">
+          <div className="w-full max-w-md h-full bg-white shadow-2xl flex flex-col transform transition-transform duration-300 slide-in-from-right">
+            <div className="p-5 border-b border-black/5 flex items-center justify-between bg-neutral-50/80 backdrop-blur">
+              <h2 className="text-xl font-black tracking-tight text-neutral-800 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-blue-600" />
+                SESSION HISTORY
+              </h2>
+              <button 
+                onClick={() => setShowHistory(false)}
+                className="p-2 hover:bg-black/5 rounded-full text-neutral-500 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-neutral-50">
+              {history.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 text-neutral-400">
+                  <Clock className="w-12 h-12 mb-2 opacity-20" />
+                  <p className="text-xs font-black uppercase tracking-widest">No Saved Logs</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {history.map((session) => (
+                    <div key={session.id} className="bg-white rounded-2xl shadow-sm border border-black/5 overflow-hidden">
+                      <div 
+                        onClick={() => setExpandedSessionId(expandedSessionId === session.id ? null : session.id)}
+                        className="p-4 cursor-pointer hover:bg-blue-50/50 transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-black text-blue-600 uppercase tracking-widest mb-1">
+                            {new Date(session.timestamp).toLocaleDateString()} • {new Date(session.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </p>
+                          <p className="text-sm font-medium text-neutral-600 line-clamp-1 italic">"{session.preview}"</p>
+                        </div>
+                        {expandedSessionId === session.id ? <ChevronUp className="w-5 h-5 text-neutral-400" /> : <ChevronDown className="w-5 h-5 text-neutral-400" />}
+                      </div>
+                      
+                      {expandedSessionId === session.id && (
+                        <div className="border-t border-black/5 bg-neutral-50/50 p-4 max-h-64 overflow-y-auto custom-scrollbar space-y-3">
+                           {session.messages.map((m, idx) => (
+                             <div key={idx} className={`text-sm ${m.sender === 'staff' ? 'text-right' : 'text-left'}`}>
+                               <span className={`text-[9px] font-black uppercase tracking-widest ${m.sender === 'staff' ? 'text-blue-500' : 'text-green-500'} block mb-0.5`}>
+                                 {m.sender === 'staff' ? 'You' : 'Visitor'}
+                               </span>
+                               <div className={`inline-block p-2 rounded-lg ${m.sender === 'staff' ? 'bg-blue-100 text-blue-900 rounded-tr-none' : 'bg-green-100 text-green-900 rounded-tl-none'}`}>
+                                 <p className="font-medium leading-snug">{m.originalText}</p>
+                                 <p className="text-xs opacity-60 mt-1 border-t border-black/5 pt-1">{m.translatedText}</p>
+                               </div>
+                             </div>
+                           ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-black/5 bg-white">
+               <button 
+                onClick={clearHistory}
+                className="w-full flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 py-3 rounded-xl transition-colors text-xs font-black uppercase tracking-widest"
+               >
+                 <Trash2 className="w-4 h-4" />
+                 Clear All Logs
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sketch Footer */}
-      <footer className="px-6 py-6 sm:py-10 bg-white border-t border-black/10 flex flex-col sm:flex-row items-center justify-between gap-6 no-print">
+      <footer className="px-6 py-6 sm:py-10 bg-white border-t border-black/10 flex flex-col sm:flex-row items-center justify-between gap-6 no-print z-10 relative">
         <div className="flex items-center gap-4 w-full sm:w-auto">
           <button 
-            onClick={() => alert('Storing current log...')}
+            onClick={handleStoreLog}
             className="flex-1 sm:flex-none bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-black uppercase text-[10px] tracking-widest px-8 py-4 rounded-xl transition-all active:scale-95 border border-black/5"
           >
             [ STORE ]
